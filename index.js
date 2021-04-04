@@ -1,74 +1,124 @@
+const accountlink = document.querySelectorAll('.accountlink');
+const accountDetails = document.querySelector('.account-details');
+const growerConsole = document.querySelectorAll('.grower-console');
+const adminItems = document.querySelectorAll('.admin');
+const login = document.querySelectorAll('.loginlink');
+const logoutlink = document.querySelectorAll('.logoutlink');
+const signup = document.querySelectorAll('.signuplink');
+const slider = document.querySelectorAll('.slider');
+const cards = document.querySelectorAll('.cards');
+const header = document.querySelectorAll('.header');
+const addDevice = document.querySelectorAll('.add-device');
+const addGrower = document.querySelectorAll('.add-grower');
+const makeAdmin = document.querySelectorAll('.make-admin');
 
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-const {BigQuery} = require('@google-cloud/bigquery');
-const cors = require('cors')({ origin: true });
 
-admin.initializeApp(functions.config().firebase);
+const setupUI = (user) => {
+    if (user) {
+            console.log("Logged In");
+        if (user.admin) 
+            {
+      addDevice.forEach(item => item.style.display = 'block');
+      addGrower.forEach(item => item.style.display = 'block');
+      makeAdmin.forEach(item => item.style.display = 'block');
+      logoutlink.forEach(item => item.style.display ='block');
+      accountlink.forEach(item => item.style.display = 'block');
+      login.forEach(item => item.style.display = 'none');
+      signup.forEach(item => item.style.display = 'none');
+      slider.forEach(item => item.style.display = 'none');
+      cards.forEach(item => item.style.display = 'none');
+      header.forEach(item => item.style.display = 'none');
+            }
+        else if (user.grower) 
+            {
+      logoutlink.forEach(item => item.style.display = 'block');
+      accountlink.forEach(item => item.style.display = 'block');
+      slider.forEach(item => item.style.display = 'block');
+      cards.forEach(item => item.style.display = 'block');
+      growerConsole.forEach(item => item.style.display = 'block');
+      header.forEach(item => item.style.display = 'block');
+      login.forEach(item => item.style.display = 'none');
+      signup.forEach(item => item.style.display = 'none');
+              }
+ 
+        else if(user)
+              {
+      login.forEach(item => item.style.display = 'none');
+      logoutlink.forEach(item => item.style.display = 'block');
+      accountlink.forEach(item => item.style.display = 'block');
+      signup.forEach(item => item.style.display = 'none');
+      slider.forEach(item => item.style.display = 'block');
+      cards.forEach(item => item.style.display = 'block');
+      header.forEach(item => item.style.display = 'block');
+              }
 
-const db = admin.database();
-const bigquery = new BigQuery();
+               
+    // Account Info  
+    db.collection('users').doc(user.uid).get().then(doc => 
+      {
+            const html = `
+            <div>User Name : ${doc.data().userName}</div>
+            <div>Bio : ${doc.data().aboutbio}</div>
+            <div>Phone : ${doc.data().phoneNo}</div>
+            <div>Logged in as ${user.email}</div>
+            <div class="pink-text">${user.admin ? 'Admin' : ''}</div>
+            <div class="pink-text">${user.grower ? 'Grower' : ''}</div> `;
+            accountDetails.innerHTML = html;
+      });
+     
+    } 
+    else 
+    {
+          //Show Login and SignUp Elemements
+         login.forEach(item => item.style.display = 'block');
+         signup.forEach(item => item.style.display = 'block');
 
-/**
- * Receive data from pubsub, then 
- * Write telemetry raw data to bigquery
- * Maintain last data on firebase realtime database
- */
-exports.receiveTelemetry = functions.pubsub
-  .topic('telemetry-topic')
-  .onPublish((message, context) => {
-    const attributes = message.attributes;
-    const payload = message.json;
+         //Showing Slider
+         slider.forEach(item => item.style.display = 'block');
 
-    const deviceId = attributes['deviceId'];
+         //Showing Slider
+         cards.forEach(item => item.style.display = 'block');
+         
+         //Showing Headers
+         header.forEach(item => item.style.display = 'block');
 
-    const data = {
-      humidity: payload.hum,
-      temp: payload.temp,
-      moisture: payload.mos,
-      pumpstatus: payload.pumpstatus,
-      deviceId: deviceId,
-      timestamp: context.timestamp
-    };
+         //Hide LogOut Link
+         logoutlink.forEach(item => item.style.display = 'none');
 
-    if (
-      payload.hum < 0 ||
-      payload.hum > 100 ||
-      payload.temp > 100 ||
-      payload.temp < -50
-    ) {
-      // Validate and do nothing
-      return;
+         //Hide Account Details
+         accountlink.forEach(item => item.style.display = 'none');
+
+        //Hide Grower Console
+         growerConsole.forEach(item => item.style.display = 'none');
+
+        //Hide Admin Items
+        addDevice.forEach(item => item.style.display = 'none');
+        addGrower.forEach(item => item.style.display = 'none');
+        makeAdmin.forEach(item => item.style.display = 'none');
+         
+        // Hide Account Info
+        accountDetails.innerHTML = '';
+        
+
     }
+  };
 
-    return Promise.all([
-      insertIntoBigquery(data),
-      updateCurrentDataFirebase(data)
-    ]);
-  });
 
-/** 
- * Maintain last status in firebase
-*/
-function updateCurrentDataFirebase(data) {
-  return db.ref(`/devices/${data.deviceId}`).set({
-    humidity: data.humidity,
-    temp: data.temp,
-    moisture: data.moisture,
-    pumpstatus: data.pumpstatus,
-    lastTimestamp: data.timestamp
-  });
-}
 
-/**
- * Store all the raw data in bigquery
- */
-function insertIntoBigquery(data) {
-  // TODO: Make sure you set the `bigquery.datasetname` Google Cloud environment variable.
-  const dataset = bigquery.dataset(functions.config().bigquery.datasetname);
-  // TODO: Make sure you set the `bigquery.tablename` Google Cloud environment variable.
-  const table = dataset.table(functions.config().bigquery.tablename);
+// setup materialize components
+document.addEventListener('DOMContentLoaded', function() {
+  
+    var navelems = document.querySelectorAll('.sidenav');
+    M.Sidenav.init(navelems);
 
-  return table.insert(data);
-}
+    var modals = document.querySelectorAll('.modal');
+    M.Modal.init(modals);
+  
+    var items = document.querySelectorAll('.collapsible');
+    M.Collapsible.init(items);
 
+    var elems = document.querySelectorAll('.slider');
+    M.Slider.init(elems);
+          
+
+}); 
